@@ -1,43 +1,96 @@
 #include <SFML/Graphics.hpp>
-#include <vector>
+#include <SFML/System.hpp> //ì‹œê°„ ê´€ë ¨ ê¸°ëŠ¥
+#include <SFML/Window.hpp> // ë§ˆìš°ìŠ¤, í‚¤ë³´ë“œ ì…ë ¥ ì´ë²¤íŠ¸ ì²˜ë¦¬
+#include <cstdlib> //ëœë¤ ìœ„ì¹˜ ìƒì„±
+#include <ctime>   //ëœë¤ ì‹œë“œ ì´ˆê¸°í™”
+#include <string>  //í…ìŠ¤íŠ¸, ìˆ«ì ì¶œë ¥
 
 int main()
 {
-    // Ã¢ »ı¼º
-    sf::RenderWindow window(sf::VideoMode(800, 600), "color change");
+    srand(static_cast<unsigned>(time(0)));
 
-    // »ç°¢Çü »ı¼º
-    sf::RectangleShape rectangle(sf::Vector2f(200, 150));
-    rectangle.setFillColor(sf::Color(128, 128, 128)); // ÃÊ±â »ö»ó: È¸»ö
-    rectangle.setPosition(300, 225); // Áß¾Ó Á¤·Ä
+    sf::RenderWindow window(sf::VideoMode(800, 600), "Circle catch");
 
-    // »ö»ó ¸®½ºÆ®
-    std::vector<sf::Color> colors = { sf::Color::Red, sf::Color::Green, sf::Color::Blue };
-    int colorIndex = -1; // ½ÃÀÛ »ö»ó ¾øÀ½
+    sf::CircleShape circle(30);
+    circle.setFillColor(sf::Color::Green);
+    circle.setPosition(rand() % 740 + 30, rand() % 540 + 30); //ìœ„ì¹˜ ëœë¤
 
+    sf::Font font;
+    if (!font.loadFromFile("C://Windows//Fonts//arial.ttf")) // í°íŠ¸ ê²½ë¡œ
+        return -1;
+
+    int score = 0;
+    int mistakes = 0;
+    const int maxMistakes = 3;
+    const int gameTimeLimit = 30; // 30ì´ˆ ì œí•œ
+    sf::Clock gameClock;
+
+    sf::Text scoreText("Score: 0", font, 24);
+    scoreText.setFillColor(sf::Color::White);
+    scoreText.setPosition(10, 10);
+
+    sf::Text timeText("Time: 30", font, 24);
+    timeText.setFillColor(sf::Color::White);
+    timeText.setPosition(10, 40);
+
+    sf::Text statusText("", font, 40);
+    statusText.setFillColor(sf::Color::Red);
+    statusText.setPosition(200, 250);
+
+    bool isGameOver = false;
+    // ê²Œì„ ë£¨í”„
     while (window.isOpen())
     {
         sf::Event event;
         while (window.pollEvent(event))
         {
-            // Ã¢ ´İ±â ¶Ç´Â ESC Å°·Î Á¾·á
             if (event.type == sf::Event::Closed ||
                 (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape))
             {
                 window.close();
             }
-
-            // ¸¶¿ì½º ¿ŞÂÊ Å¬¸¯ ½Ã »ö»ó º¯°æ
-            if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
+             // ë§ˆìš°ìŠ¤ ì™¼ìª½ í´ë¦­, ì› ì•ˆì„ í´ë¦­í–ˆëŠ”ì§€ í™•ì¸
+            if (!isGameOver && event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
             {
-                colorIndex = (colorIndex + 1) % colors.size();
-                rectangle.setFillColor(colors[colorIndex]);
+                sf::Vector2f mousePos(event.mouseButton.x, event.mouseButton.y);
+                if (circle.getGlobalBounds().contains(mousePos))
+                {
+                    score++;
+                    scoreText.setString("Score: " + std::to_string(score));
+                    circle.setPosition(rand() % 740 + 30, rand() % 540 + 30);
+                }
+                else
+                {
+                    mistakes++;
+                    if (mistakes >= maxMistakes)
+                    {
+                        isGameOver = true;
+                        statusText.setString("Game Over!");
+                    }
+                }
             }
         }
 
-        // È­¸é ±×¸®±â
+        // ì‹œê°„ ì²´í¬
+        int remainingTime = gameTimeLimit - static_cast<int>(gameClock.getElapsedTime().asSeconds());
+        if (remainingTime <= 0 && !isGameOver)
+        {
+            isGameOver = true;
+            statusText.setString("Time's Up!");
+        }
+        timeText.setString("Time: " + std::to_string(std::max(0, remainingTime)));
+
         window.clear();
-        window.draw(rectangle);
+        if (!isGameOver)
+        {
+            window.draw(circle);
+        }
+        window.draw(scoreText);
+        window.draw(timeText);
+        if (isGameOver)
+        {
+            window.draw(statusText);
+        }
         window.display();
     }
 
